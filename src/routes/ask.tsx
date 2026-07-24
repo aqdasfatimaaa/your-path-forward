@@ -17,13 +17,19 @@ export const Route = createFileRoute("/ask")({
 type Msg = { role: "user" | "assistant"; content: string };
 
 function AskPage() {
-  const { state, hydrated } = useAppState();
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content: "Hi — I'm your Navigator. What's on your mind about your roadmap?",
-    },
-  ]);
+  const { state, update, hydrated } = useAppState();
+  const GREETING: Msg = {
+    role: "assistant",
+    content: "Hi — I'm your Navigator. What's on your mind about your roadmap?",
+  };
+  const [messages, setMessages] = useState<Msg[]>([GREETING]);
+
+  useEffect(() => {
+    if (hydrated && state.chatHistory && state.chatHistory.length > 0) {
+      setMessages(state.chatHistory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +70,7 @@ function AskPage() {
         },
       });
       setMessages((m) => [...m, { role: "assistant", content: res.content }]);
+      update({ chatHistory: [...next, { role: "assistant", content: res.content }] });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
