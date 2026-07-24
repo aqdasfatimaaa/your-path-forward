@@ -143,7 +143,10 @@ function ClarifyPage() {
             </div>
 
             <button
-              onClick={() => navigate({ to: "/dashboard" })}
+              onClick={() => {
+                update({ roadmap: undefined, whatIfPaths: undefined, completedTasks: {} });
+                navigate({ to: "/dashboard" });
+              }}
               className="mt-10 rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground shadow-sm hover:bg-accent/90"
             >
               Generate my roadmap

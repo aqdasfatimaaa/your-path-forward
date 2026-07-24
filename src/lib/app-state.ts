@@ -28,6 +28,19 @@ export interface AppState {
   }[];
   clarifyAnswers: Record<string, string>;
   completedTasks: Record<string, boolean>;
+  roadmap?: {
+    note: string;
+    milestones: { title: string; tasks: { task: string; done: boolean }[] }[];
+    gaps: { item: string; why: string }[];
+  };
+  whatIfPaths?: {
+    name: string;
+    timeframe: string;
+    difficulty: string;
+    pros: string[];
+    tradeoffs: string[];
+    bestFor: string;
+  }[];
 }
 
 const KEY = "ai-life-navigator-state";
