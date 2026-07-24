@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WhatifRouteImport } from './routes/whatif'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as DetailsRouteImport } from './routes/details'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -18,11 +17,6 @@ import { Route as CategoryRouteImport } from './routes/category'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as IndexRouteImport } from './routes/index'
 
-const WhatifRoute = WhatifRouteImport.update({
-  id: '/whatif',
-  path: '/whatif',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -67,7 +61,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/details': typeof DetailsRoute
   '/progress': typeof ProgressRoute
-  '/whatif': typeof WhatifRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +70,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/details': typeof DetailsRoute
   '/progress': typeof ProgressRoute
-  '/whatif': typeof WhatifRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +80,6 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/details': typeof DetailsRoute
   '/progress': typeof ProgressRoute
-  '/whatif': typeof WhatifRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,7 +91,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/details'
     | '/progress'
-    | '/whatif'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -110,7 +100,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/details'
     | '/progress'
-    | '/whatif'
   id:
     | '__root__'
     | '/'
@@ -120,7 +109,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/details'
     | '/progress'
-    | '/whatif'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,18 +119,10 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DetailsRoute: typeof DetailsRoute
   ProgressRoute: typeof ProgressRoute
-  WhatifRoute: typeof WhatifRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/whatif': {
-      id: '/whatif'
-      path: '/whatif'
-      fullPath: '/whatif'
-      preLoaderRoute: typeof WhatifRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/progress': {
       id: '/progress'
       path: '/progress'
@@ -203,7 +183,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DetailsRoute: DetailsRoute,
   ProgressRoute: ProgressRoute,
-  WhatifRoute: WhatifRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
