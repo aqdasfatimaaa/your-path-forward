@@ -77,14 +77,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "AI Life Navigator — Turn any goal into a clear path" },
+      {
+        name: "description",
+        content:
+          "AI Life Navigator turns confusing, complex goals into a personalized, step-by-step roadmap you can act on.",
+      },
+      { property: "og:title", content: "AI Life Navigator" },
+      {
+        property: "og:description",
+        content: "Turn any goal into a clear path forward.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
