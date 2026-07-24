@@ -46,6 +46,7 @@ export interface AppState {
 }
 
 const KEY = "ai-life-navigator-state";
+
 const DEFAULT: AppState = {
   details: {},
   clarifyQuestions: [],
@@ -72,13 +73,17 @@ export function useAppState() {
     const local = read();
     setState(local);
     const deviceId = getDeviceId();
+
     // Load from Supabase; prefer remote if it exists.
     supabase
       .from("app_state")
       .select("state")
       .eq("device_id", deviceId)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Supabase load failed:", error.message, error);
+        }
         if (data?.state) {
           const merged = { ...DEFAULT, ...(data.state as AppState) };
           setState(merged);
@@ -96,15 +101,24 @@ export function useAppState() {
       try {
         localStorage.setItem(KEY, JSON.stringify(next));
       } catch {}
+
       const deviceId = getDeviceId();
       if (deviceId) {
-        void supabase
+        supabase
           .from("app_state")
           .upsert(
             { device_id: deviceId, state: next, updated_at: new Date().toISOString() },
             { onConflict: "device_id" },
-          );
+          )
+          .then(({ error }) => {
+            if (error) {
+              console.error("Supabase upsert failed:", error.message, error);
+            } else {
+              console.log("Supabase upsert succeeded for device:", deviceId);
+            }
+          });
       }
+
       return next;
     });
   }, []);
@@ -115,7 +129,15 @@ export function useAppState() {
     } catch {}
     const deviceId = getDeviceId();
     if (deviceId) {
-      void supabase.from("app_state").delete().eq("device_id", deviceId);
+      supabase
+        .from("app_state")
+        .delete()
+        .eq("device_id", deviceId)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Supabase delete failed:", error.message, error);
+          }
+        });
     }
     setState(DEFAULT);
   }, []);
