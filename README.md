@@ -42,7 +42,7 @@ Anyone facing a major, complex personal or professional goal who doesn't know ho
 
 ## Live App
 
-**your-path-forward-nine.vercel.app**
+**[your-path-forward-nine.vercel.app](https://your-path-forward-nine.vercel.app/)**
 
 ---
 
