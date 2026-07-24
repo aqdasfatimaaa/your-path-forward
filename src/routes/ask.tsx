@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { PageShell } from "@/components/AppHeader";
+import { CATEGORIES, useAppState } from "@/lib/app-state";
+import { askNavigator } from "@/lib/ask.functions";
 
 export const Route = createFileRoute("/ask")({
   head: () => ({
@@ -12,37 +14,65 @@ export const Route = createFileRoute("/ask")({
   component: AskPage,
 });
 
-type Msg = { role: "user" | "assistant"; text: string };
+type Msg = { role: "user" | "assistant"; content: string };
 
 function AskPage() {
+  const { state, hydrated } = useAppState();
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      text: "Hi — I'm your Navigator. What's on your mind about your roadmap?",
+      content: "Hi — I'm your Navigator. What's on your mind about your roadmap?",
     },
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const categoryLabel =
+    CATEGORIES.find((c) => c.id === state.category)?.label ?? "your goal";
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
-  const send = () => {
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const send = async () => {
     const text = input.trim();
-    if (!text) return;
-    setMessages((m) => [...m, { role: "user", text }]);
+    if (!text || loading) return;
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
     setInput("");
-    setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          text: "Good question. I'll think that through against your current roadmap and share a specific answer.",
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await askNavigator({
+        data: {
+          categoryLabel,
+          details: state.details,
+          clarifyAnswers: state.clarifyAnswers,
+          clarifyQuestions: state.clarifyQuestions.map((q) => ({
+            id: q.id,
+            question: q.question,
+          })),
+          roadmap: state.roadmap,
+          messages: next,
         },
-      ]);
-    }, 600);
+      });
+      setMessages((m) => [...m, { role: "assistant", content: res.content }]);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
   };
+
+  if (!hydrated) return null;
 
   return (
     <PageShell>
@@ -58,15 +88,29 @@ function AskPage() {
             >
               {m.role === "user" ? (
                 <div className="max-w-[80%] rounded-2xl bg-primary px-4 py-2.5 text-sm text-primary-foreground">
-                  {m.text}
+                  {m.content}
                 </div>
               ) : (
-                <div className="max-w-[85%] text-sm leading-relaxed text-foreground">
-                  {m.text}
+                <div className="max-w-[85%] whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                  {m.content}
                 </div>
               )}
             </div>
           ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="flex gap-1 text-muted-foreground">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.2s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.1s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" />
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              {error}
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
         <form
@@ -77,14 +121,17 @@ function AskPage() {
           className="flex items-center gap-2 border-t border-border/70 px-3 py-3"
         >
           <input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
             placeholder="Ask about your roadmap…"
             className="min-w-0 flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90"
+            disabled={loading || !input.trim()}
+            className="shrink-0 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
           >
             Send
           </button>
