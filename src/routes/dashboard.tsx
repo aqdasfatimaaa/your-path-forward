@@ -261,7 +261,7 @@ function DashboardPage() {
           <div className="font-medium">Couldn't generate your roadmap</div>
           <div className="mt-1 opacity-80">{error}</div>
           <button
-            onClick={run}
+            onClick={() => run()}
             className="mt-3 rounded-full border border-destructive/40 px-4 py-1.5 text-xs font-medium hover:bg-destructive/10"
           >
             Try again
@@ -349,6 +349,98 @@ function DashboardPage() {
             </section>
           )}
         </>
+      )}
+
+      {refreshOpen && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 px-4"
+          onClick={() => !loading && setRefreshOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold">Refresh My Roadmap</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              What's changed? Share any new circumstances, priorities, or constraints — your roadmap will adjust while keeping completed work.
+            </p>
+            <textarea
+              autoFocus
+              value={refreshText}
+              onChange={(e) => setRefreshText(e.target.value)}
+              rows={5}
+              placeholder="e.g. I got a new job offer, or my timeline changed to 3 months…"
+              className="mt-4 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-foreground/40"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setRefreshOpen(false)}
+                disabled={loading}
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const t = refreshText.trim();
+                  if (!t) return;
+                  setRefreshOpen(false);
+                  setRefreshText("");
+                  run(t);
+                }}
+                disabled={loading || !refreshText.trim()}
+                className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                {loading ? "Updating…" : "Update roadmap"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {shareOpen && roadmap && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 px-4"
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">Share your roadmap</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Download a clean PDF or copy a text summary to share.
+                </p>
+              </div>
+              <button
+                onClick={() => setShareOpen(false)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-background p-3 text-xs text-muted-foreground">
+{buildSummary()}
+            </pre>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button
+                onClick={copySummary}
+                className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/30"
+              >
+                {copied ? "Copied!" : "Copy summary"}
+              </button>
+              <button
+                onClick={downloadPdf}
+                className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+              >
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </PageShell>
   );
