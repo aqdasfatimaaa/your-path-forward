@@ -107,7 +107,10 @@ function DashboardPage() {
           </p>
         </div>
         <button
-          onClick={() => setLoading(true) || setTimeout(() => setLoading(false), 700)}
+          onClick={() => {
+            setLoading(true);
+            setTimeout(() => setLoading(false), 700);
+          }}
           className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/30"
         >
           Refresh
