@@ -24,6 +24,14 @@ function DashboardPage() {
   const categoryLabel =
     CATEGORIES.find((c) => c.id === state.category)?.label ?? "";
 
+  const roadmap = state.roadmap;
+  const allTasks = useMemo(() => {
+    if (!roadmap) return [] as string[];
+    return roadmap.milestones.flatMap((m, mi) =>
+      m.tasks.map((_, ti) => `${mi}-${ti}`)
+    );
+  }, [roadmap]);
+
   const run = () => {
     if (!state.category || fetching.current) return;
     fetching.current = true;
@@ -68,14 +76,6 @@ function DashboardPage() {
       </PageShell>
     );
   }
-
-  const roadmap = state.roadmap;
-  const allTasks = useMemo(() => {
-    if (!roadmap) return [] as string[];
-    return roadmap.milestones.flatMap((m, mi) =>
-      m.tasks.map((_, ti) => `${mi}-${ti}`)
-    );
-  }, [roadmap]);
   const done = allTasks.filter((id) => state.completedTasks[id]).length;
   const pct = allTasks.length ? Math.round((done / allTasks.length) * 100) : 0;
 
