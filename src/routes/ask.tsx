@@ -43,10 +43,6 @@ function AskPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
@@ -153,9 +149,12 @@ function AskPage() {
         >
           <input
             ref={inputRef}
+            type="text"
+            name="ask"
+            autoComplete="off"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
+            readOnly={false}
             placeholder="Ask about your roadmap…"
             className="min-w-0 flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
           />
