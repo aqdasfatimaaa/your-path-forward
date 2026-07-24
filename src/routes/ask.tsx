@@ -81,6 +81,30 @@ function AskPage() {
 
   if (!hydrated) return null;
 
+  const hasRoadmap = !!state.roadmap && state.roadmap.milestones.length > 0;
+
+  if (!hasRoadmap) {
+    return (
+      <PageShell>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Ask Your Navigator</h1>
+        <p className="mt-2 text-sm text-muted-foreground">A calm space to think out loud.</p>
+        <div className="mt-10 rounded-3xl border border-border/70 bg-card p-8 text-center">
+          <div className="text-2xl">🗺️</div>
+          <h2 className="mt-3 text-lg font-semibold">Generate a roadmap first to start chatting</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your Navigator grounds every answer in your actual roadmap and goals. Create one to unlock the chat.
+          </p>
+          <a
+            href="/dashboard"
+            className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90"
+          >
+            Go to roadmap
+          </a>
+        </div>
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Ask Your Navigator</h1>
