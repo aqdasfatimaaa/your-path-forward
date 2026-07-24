@@ -20,6 +20,12 @@ export interface AppState {
   details: Record<string, string>;
   timePerWeek?: string;
   timeframe?: string;
+  clarifyQuestions: {
+    id: string;
+    question: string;
+    type: "text" | "choice";
+    options: string[] | null;
+  }[];
   clarifyAnswers: Record<string, string>;
   completedTasks: Record<string, boolean>;
 }
@@ -27,6 +33,7 @@ export interface AppState {
 const KEY = "ai-life-navigator-state";
 const DEFAULT: AppState = {
   details: {},
+  clarifyQuestions: [],
   clarifyAnswers: {},
   completedTasks: {},
 };
