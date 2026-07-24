@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { supabase, getDeviceId } from "@/integrations/supabase/client";
 
 export type CategoryId =
   | "career"
@@ -41,6 +42,7 @@ export interface AppState {
     tradeoffs: string[];
     bestFor: string;
   }[];
+  chatHistory?: { role: "user" | "assistant"; content: string }[];
 }
 
 const KEY = "ai-life-navigator-state";
@@ -67,8 +69,25 @@ export function useAppState() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setState(read());
-    setHydrated(true);
+    const local = read();
+    setState(local);
+    const deviceId = getDeviceId();
+    // Load from Supabase; prefer remote if it exists.
+    supabase
+      .from("app_state")
+      .select("state")
+      .eq("device_id", deviceId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.state) {
+          const merged = { ...DEFAULT, ...(data.state as AppState) };
+          setState(merged);
+          try {
+            localStorage.setItem(KEY, JSON.stringify(merged));
+          } catch {}
+        }
+        setHydrated(true);
+      });
   }, []);
 
   const update = useCallback((patch: Partial<AppState>) => {
@@ -77,6 +96,15 @@ export function useAppState() {
       try {
         localStorage.setItem(KEY, JSON.stringify(next));
       } catch {}
+      const deviceId = getDeviceId();
+      if (deviceId) {
+        void supabase
+          .from("app_state")
+          .upsert(
+            { device_id: deviceId, state: next, updated_at: new Date().toISOString() },
+            { onConflict: "device_id" },
+          );
+      }
       return next;
     });
   }, []);
@@ -85,6 +113,10 @@ export function useAppState() {
     try {
       localStorage.removeItem(KEY);
     } catch {}
+    const deviceId = getDeviceId();
+    if (deviceId) {
+      void supabase.from("app_state").delete().eq("device_id", deviceId);
+    }
     setState(DEFAULT);
   }, []);
 
