@@ -10,6 +10,19 @@ const InputSchema = z.object({
     .optional(),
   timePerWeek: z.string().optional(),
   timeframe: z.string().optional(),
+  update: z.string().optional(),
+  existingRoadmap: z
+    .object({
+      note: z.string().default(""),
+      milestones: z.array(
+        z.object({
+          title: z.string(),
+          tasks: z.array(z.object({ task: z.string(), done: z.boolean().default(false) })),
+        })
+      ),
+      gaps: z.array(z.object({ item: z.string(), why: z.string() })).default([]),
+    })
+    .optional(),
 });
 
 const TaskSchema = z.object({ task: z.string(), done: z.boolean().default(false) });
@@ -45,6 +58,9 @@ export const generateRoadmap = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("Missing GROQ_API_KEY");
 
     const system = SYSTEM_TEMPLATE.replace("{category}", data.categoryLabel);
+    const systemWithUpdate = data.update
+      ? `${system}\n\nThe user's circumstances have changed as follows: ${data.update}. Adjust the existing roadmap to reflect this, keeping completed tasks marked done where still applicable, and note what changed and why.`
+      : system;
 
     const clarify = (data.clarifyQuestions ?? []).map((q) => ({
       question: q.question,
@@ -57,6 +73,8 @@ export const generateRoadmap = createServerFn({ method: "POST" })
       clarifyingAnswers: clarify,
       availableTimePerWeek: data.timePerWeek ?? null,
       timeframe: data.timeframe ?? null,
+      existingRoadmap: data.existingRoadmap ?? null,
+      circumstanceUpdate: data.update ?? null,
     };
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -70,7 +88,7 @@ export const generateRoadmap = createServerFn({ method: "POST" })
         temperature: 0.5,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: systemWithUpdate },
           {
             role: "user",
             content: `User context:\n${JSON.stringify(userContext, null, 2)}\n\nGenerate the roadmap now.`,
