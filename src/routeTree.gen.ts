@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhatifRouteImport } from './routes/whatif'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as DetailsRouteImport } from './routes/details'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ClarifyRouteImport } from './routes/clarify'
 import { Route as CategoryRouteImport } from './routes/category'
 import { Route as AskRouteImport } from './routes/ask'
@@ -31,11 +30,6 @@ const ProgressRoute = ProgressRouteImport.update({
 const DetailsRoute = DetailsRouteImport.update({
   id: '/details',
   path: '/details',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClarifyRoute = ClarifyRouteImport.update({
@@ -64,7 +58,6 @@ export interface FileRoutesByFullPath {
   '/ask': typeof AskRoute
   '/category': typeof CategoryRoute
   '/clarify': typeof ClarifyRoute
-  '/dashboard': typeof DashboardRoute
   '/details': typeof DetailsRoute
   '/progress': typeof ProgressRoute
   '/whatif': typeof WhatifRoute
@@ -74,7 +67,6 @@ export interface FileRoutesByTo {
   '/ask': typeof AskRoute
   '/category': typeof CategoryRoute
   '/clarify': typeof ClarifyRoute
-  '/dashboard': typeof DashboardRoute
   '/details': typeof DetailsRoute
   '/progress': typeof ProgressRoute
   '/whatif': typeof WhatifRoute
@@ -85,7 +77,6 @@ export interface FileRoutesById {
   '/ask': typeof AskRoute
   '/category': typeof CategoryRoute
   '/clarify': typeof ClarifyRoute
-  '/dashboard': typeof DashboardRoute
   '/details': typeof DetailsRoute
   '/progress': typeof ProgressRoute
   '/whatif': typeof WhatifRoute
@@ -97,7 +88,6 @@ export interface FileRouteTypes {
     | '/ask'
     | '/category'
     | '/clarify'
-    | '/dashboard'
     | '/details'
     | '/progress'
     | '/whatif'
@@ -107,7 +97,6 @@ export interface FileRouteTypes {
     | '/ask'
     | '/category'
     | '/clarify'
-    | '/dashboard'
     | '/details'
     | '/progress'
     | '/whatif'
@@ -117,7 +106,6 @@ export interface FileRouteTypes {
     | '/ask'
     | '/category'
     | '/clarify'
-    | '/dashboard'
     | '/details'
     | '/progress'
     | '/whatif'
@@ -128,7 +116,6 @@ export interface RootRouteChildren {
   AskRoute: typeof AskRoute
   CategoryRoute: typeof CategoryRoute
   ClarifyRoute: typeof ClarifyRoute
-  DashboardRoute: typeof DashboardRoute
   DetailsRoute: typeof DetailsRoute
   ProgressRoute: typeof ProgressRoute
   WhatifRoute: typeof WhatifRoute
@@ -155,13 +142,6 @@ declare module '@tanstack/react-router' {
       path: '/details'
       fullPath: '/details'
       preLoaderRoute: typeof DetailsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clarify': {
@@ -200,7 +180,6 @@ const rootRouteChildren: RootRouteChildren = {
   AskRoute: AskRoute,
   CategoryRoute: CategoryRoute,
   ClarifyRoute: ClarifyRoute,
-  DashboardRoute: DashboardRoute,
   DetailsRoute: DetailsRoute,
   ProgressRoute: ProgressRoute,
   WhatifRoute: WhatifRoute,
