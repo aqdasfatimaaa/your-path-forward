@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PageShell } from "@/components/AppHeader";
 import { CATEGORIES, useAppState } from "@/lib/app-state";
 import { generateRoadmap } from "@/lib/roadmap.functions";
+import jsPDF from "jspdf";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -19,6 +20,10 @@ function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<number | null>(0);
+  const [refreshOpen, setRefreshOpen] = useState(false);
+  const [refreshText, setRefreshText] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fetching = useRef(false);
 
   const categoryLabel =
@@ -32,7 +37,7 @@ function DashboardPage() {
     );
   }, [roadmap]);
 
-  const run = () => {
+  const run = (updateText?: string) => {
     if (!state.category || fetching.current) return;
     fetching.current = true;
     setLoading(true);
@@ -45,10 +50,32 @@ function DashboardPage() {
         clarifyQuestions: state.clarifyQuestions.map((q) => ({ id: q.id, question: q.question })),
         timePerWeek: state.timePerWeek,
         timeframe: state.timeframe,
+        update: updateText,
+        existingRoadmap: updateText ? state.roadmap : undefined,
       },
     })
       .then((res) => {
-        update({ roadmap: res, completedTasks: {} });
+        if (updateText) {
+          // Preserve completed tasks whose text still exists in the new roadmap
+          const preserved: Record<string, boolean> = {};
+          res.milestones.forEach((m, mi) =>
+            m.tasks.forEach((t, ti) => {
+              const wasDone =
+                t.done ||
+                state.roadmap?.milestones.some((om) =>
+                  om.tasks.some(
+                    (ot, oti) =>
+                      ot.task === t.task &&
+                      state.completedTasks[`${state.roadmap!.milestones.indexOf(om)}-${oti}`]
+                  )
+                );
+              if (wasDone) preserved[`${mi}-${ti}`] = true;
+            })
+          );
+          update({ roadmap: res, completedTasks: preserved });
+        } else {
+          update({ roadmap: res, completedTasks: {} });
+        }
         setOpen(0);
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Something went wrong."))
@@ -84,6 +111,113 @@ function DashboardPage() {
       completedTasks: { ...state.completedTasks, [id]: !state.completedTasks[id] },
     });
 
+  const buildSummary = () => {
+    if (!roadmap) return "";
+    const lines: string[] = [];
+    lines.push(`AI Life Navigator — Roadmap`);
+    lines.push(`Category: ${categoryLabel}`);
+    if (state.timeframe) lines.push(`Timeframe: ${state.timeframe}`);
+    if (state.timePerWeek) lines.push(`Time/week: ${state.timePerWeek}`);
+    lines.push(`Progress: ${done}/${allTasks.length} tasks (${pct}%)`);
+    lines.push("");
+    if (roadmap.note) {
+      lines.push(`Note: ${roadmap.note}`);
+      lines.push("");
+    }
+    lines.push(`MILESTONES`);
+    roadmap.milestones.forEach((m, i) => {
+      lines.push(`\n${i + 1}. ${m.title}`);
+      m.tasks.forEach((t, ti) => {
+        const mark = state.completedTasks[`${i}-${ti}`] ? "[x]" : "[ ]";
+        lines.push(`   ${mark} ${t.task}`);
+      });
+    });
+    if (roadmap.gaps.length) {
+      lines.push(`\nGAPS TO CLOSE`);
+      roadmap.gaps.forEach((g) => {
+        lines.push(`\n• ${g.item}`);
+        lines.push(`   ${g.why}`);
+      });
+    }
+    return lines.join("\n");
+  };
+
+  const downloadPdf = () => {
+    if (!roadmap) return;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const marginX = 48;
+    const marginY = 56;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const maxW = pageW - marginX * 2;
+    let y = marginY;
+
+    const ensure = (h: number) => {
+      if (y + h > pageH - marginY) {
+        doc.addPage();
+        y = marginY;
+      }
+    };
+    const write = (text: string, size: number, bold = false, indent = 0) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      const lines = doc.splitTextToSize(text, maxW - indent) as string[];
+      lines.forEach((ln) => {
+        ensure(size + 4);
+        doc.text(ln, marginX + indent, y);
+        y += size + 4;
+      });
+    };
+
+    doc.setTextColor(27, 36, 48);
+    write("AI Life Navigator", 20, true);
+    write("Your Roadmap", 14, false);
+    y += 6;
+    write(`Category: ${categoryLabel}`, 11);
+    if (state.timeframe) write(`Timeframe: ${state.timeframe}`, 11);
+    if (state.timePerWeek) write(`Time per week: ${state.timePerWeek}`, 11);
+    write(`Progress: ${done}/${allTasks.length} tasks (${pct}%)`, 11);
+    y += 8;
+
+    if (roadmap.note) {
+      write(roadmap.note, 10.5);
+      y += 6;
+    }
+
+    write("Milestones", 14, true);
+    y += 2;
+    roadmap.milestones.forEach((m, i) => {
+      y += 4;
+      write(`${i + 1}. ${m.title}`, 12, true);
+      m.tasks.forEach((t, ti) => {
+        const mark = state.completedTasks[`${i}-${ti}`] ? "[x]" : "[ ]";
+        write(`${mark} ${t.task}`, 11, false, 16);
+      });
+    });
+
+    if (roadmap.gaps.length) {
+      y += 10;
+      write("Gaps to Close", 14, true);
+      roadmap.gaps.forEach((g) => {
+        y += 4;
+        write(`• ${g.item}`, 12, true);
+        write(g.why, 11, false, 16);
+      });
+    }
+
+    doc.save("ai-life-navigator-roadmap.pdf");
+  };
+
+  const copySummary = async () => {
+    try {
+      await navigator.clipboard.writeText(buildSummary());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   if (loading && !roadmap) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
@@ -97,23 +231,29 @@ function DashboardPage() {
 
   return (
     <PageShell>
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Your Roadmap</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {done} of {allTasks.length} tasks complete
           </p>
         </div>
-        <button
-          onClick={() => {
-            update({ roadmap: undefined, completedTasks: {} });
-            run();
-          }}
-          disabled={loading}
-          className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/30 disabled:opacity-50"
-        >
-          {loading ? "Refreshing…" : "Regenerate"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShareOpen(true)}
+            disabled={!roadmap}
+            className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/30 disabled:opacity-50"
+          >
+            Share
+          </button>
+          <button
+            onClick={() => setRefreshOpen(true)}
+            disabled={loading || !roadmap}
+            className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/30 disabled:opacity-50"
+          >
+            {loading ? "Refreshing…" : "Refresh My Roadmap"}
+          </button>
+        </div>
       </div>
 
       {error && (
